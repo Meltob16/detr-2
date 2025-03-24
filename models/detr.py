@@ -37,11 +37,12 @@ class DETR(nn.Module):
         self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
         self.bbox_embed = MLP(hidden_dim, hidden_dim, 4, 3)
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
+        self.context_embed = nn.Sequential(nn.Linear(3, 126), nn.ReLU(), nn.Linear(126, hidden_dim)) # inputs: [latitude, sun_azimuth, sun_zenith]
         self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.backbone = backbone
         self.aux_loss = aux_loss
 
-    def forward(self, samples: NestedTensor):
+    def forward(self, samples: NestedTensor, context):
         """ The forward expects a NestedTensor, which consists of:
                - samples.tensor: batched images, of shape [batch_size x 3 x H x W]
                - samples.mask: a binary mask of shape [batch_size x H x W], containing 1 on padded pixels
@@ -62,7 +63,10 @@ class DETR(nn.Module):
 
         src, mask = features[-1].decompose()
         assert mask is not None
-        hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0]
+        context = self.context_embed(context)  # [bs, 256]
+        src = self.input_proj(src)
+        hs = self.transformer(src, mask, self.query_embed.weight, pos[-1], context)[0]
+
 
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()

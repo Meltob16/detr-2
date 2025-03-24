@@ -29,7 +29,12 @@ class PositionEmbeddingSine(nn.Module):
         x = tensor_list.tensors
         mask = tensor_list.mask
         assert mask is not None
+        false_mask = torch.zeros((mask.size(0), 1, mask.size(2)), dtype=torch.bool, device=mask.device)
+        mask = torch.cat((mask, false_mask), dim=1)
         not_mask = ~mask
+        ## ugly solution to add row, then remove column number minus one from the flattened tensor
+
+
         y_embed = not_mask.cumsum(1, dtype=torch.float32)
         x_embed = not_mask.cumsum(2, dtype=torch.float32)
         if self.normalize:

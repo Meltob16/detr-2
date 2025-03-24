@@ -49,7 +49,7 @@ class Args(argparse.Namespace):
     output_dir=''
     device='cpu'
     seed=42
-    resume='C:/repos/detr-untouched/models/out/sentinel2_5_epochs/checkpoint.pth'
+    resume='C:/repos/detr-untouched/models/out/sentinel2_20_epochs/checkpoint.pth'
     start_epoch=0
     eval=True
     num_workers=2
@@ -61,11 +61,16 @@ args = Args()
 
 # coco_idx_to_label = {idx: label for idx, label in enumerate(CLASSES)}
 
-transform_rgb = T.Compose([
-    T.Resize(800),
-    T.ToTensor(),
-    T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-])
+# transform_rgb = T.Compose([
+#     T.Resize(800),
+#     T.ToTensor(),
+#     T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+# ])
+
+transform_rgb =  T.Compose([
+        T.ToTensor(),
+        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
 
 
 # colors for visualization
@@ -153,13 +158,14 @@ def postprocess_img(img_path):
   img = transform_rgb(im).unsqueeze(0)
 #   im = unnorm(im)
   # propagate through the model
+  dummy_context = torch.Tensor([1,2,3]).unsqueeze(0)
   start = time.time()
-  outputs = model(img)
+  outputs = model(img, dummy_context)
   end = time.time()
   print(f'Prediction time per image: {math.ceil(end - start)}s ', )
 
   probas = outputs['pred_logits'].softmax(-1)[0, :, :-1]
-  keep = probas.max(-1).values > 0.4
+  keep = probas.max(-1).values > 0.6
 
    # convert boxes from [0; 1] to image scales
 #   bboxes_scaled = rescale_bboxes(outputs['pred_boxes'][0, keep], im.size)
@@ -187,7 +193,7 @@ example = dataset_train[0]
 ## show sample from model
 # load the model
 model, criterion, postprocessors = build_model(args)
-TRAINED_PATH = 'C:/repos/detr-untouched/models/out/sentinel2_5_epochs/checkpoint.pth'
+TRAINED_PATH = 'C:/repos/detr-untouched/models/out/sentinel2_20_epochs/checkpoint.pth'
 checkpoint = torch.load(TRAINED_PATH, map_location='cpu', weights_only=False)
 model.load_state_dict(checkpoint['model'], strict=False)
 TEST_IMAGE_PATH = 'c:/datasets/sentinel2_coco/valid'

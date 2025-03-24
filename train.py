@@ -21,11 +21,11 @@ if __name__ == "__main__":
     resume_model = "detr-r50_no-class-head.pth" if pretrained else "scratch"
 
     class Args(argparse.Namespace):
-        lr=1e-5
-        lr_backbone=1e-6
+        lr=1e-4
+        lr_backbone=1e-5
         batch_size=2
         weight_decay=1e-4
-        epochs=5
+        epochs=20
         lr_drop=200
         clip_max_norm=0.1
         frozen_weights=None
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         coco_path='c:/datasets/sentinel2_coco' 
         coco_panoptic_path=None
         remove_difficult=False
-        output_dir='models/out/sentinel2_5_epochs'
+        output_dir='models/out/sentinel2_20_epochs'
         device='cuda'
         seed=42
         resume=resume_model
